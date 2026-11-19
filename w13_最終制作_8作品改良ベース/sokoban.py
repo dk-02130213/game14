@@ -1,6 +1,8 @@
 
 LEVELS = [
-    [
+    {
+            "name": "ステージ1",
+            "map": [
         "#########",
         "#       #",
         "#  .    #",
@@ -8,8 +10,12 @@ LEVELS = [
         "#  @    #",
         "#       #",
         "#########",
-    ],
-    [
+        ],
+        "features": [],
+    },
+    {
+        "name": "ステージ2",
+        "map": [
         "##########",
         "#        #",
         "#  ..    #",
@@ -17,8 +23,12 @@ LEVELS = [
         "#   @    #",
         "#        #",
         "##########",
-    ],
-    [
+        ],
+        "features": []
+    },
+    {
+        "name": "ステージ3",
+        "map": [
         "###########",
         "#         #",
         "#         #",
@@ -27,7 +37,10 @@ LEVELS = [
         "#  . # $  #",
         "#      @  #",
         "###########",
-    ],
+        ],
+        "features": []
+    },  
+
 ]
 
 DIRECTIONS = {"w": (0, -1), "s": (0, 1), "a": (-1, 0), "d": (1, 0)}
@@ -118,7 +131,7 @@ def is_cleared(game):
 
 def main():
     level_index = 0
-    game = load_level(LEVELS[level_index])
+    game = load_level(LEVELS[level_index]["map"])
     while True:
         draw_game(game)
         if is_cleared(game):
@@ -128,13 +141,13 @@ def main():
                 print("全ステージクリア！")
                 break
             input("Enterを押して次へ...")
-            game = load_level(LEVELS[level_index])
+            game = load_level(LEVELS[level_index]["map"])
             continue
         key = input("操作 > ").strip().lower()[:1]
         if key == "q":
             break
         if key == "r":
-            game = load_level(LEVELS[level_index])
+            game = load_level(LEVELS[level_index]["map"])
         elif key == "u":
             undo(game)
         else:
