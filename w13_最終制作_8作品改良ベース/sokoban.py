@@ -12,6 +12,7 @@ LEVELS = [
         "#########",
         ],
         "features": [],
+        "description": "箱をすべてゴールに運ぼう！"
     },
     {
         "name": "ステージ2",
@@ -35,7 +36,8 @@ LEVELS = [
         "##########",
         ]
         },
-        "features": ["mirror"]
+        "features": ["mirror"],
+        "description": "部屋Aをお手本にして、部屋Bの箱を同じ位置に配置しよう！"
     },
     {
         "name": "ステージ3",
@@ -49,7 +51,8 @@ LEVELS = [
         "#      @  #",
         "###########",
         ],
-        "features": []
+        "features": [],
+        "description": "箱をすべてゴールに運ぼう！"
     },  
 
 ]
@@ -102,6 +105,7 @@ def load_level(level):#解析したマップを使って、ステージ全体を
             "current_room": "A",
             "player": room_a["player"],
             "features": level["features"],
+            "description": level["description"],
             "moves": 0,
             "history": []
         }
@@ -111,6 +115,7 @@ def load_level(level):#解析したマップを使って、ステージ全体を
         game = {
             **room,
             "features": level["features"],
+            "description": level["description"],
             "moves": 0,
             "history": []
         }
@@ -125,6 +130,7 @@ def draw_game(game):
         room = game
 
     print("\n" * 2 + "=== SOKOBAN ===")
+    print("クリア条件:", game["description"])
     print("# 壁   . ゴール   $ 箱   @ プレイヤー   * ゴール上の箱")
     for y in range(room["height"]):
         line = ""
@@ -164,8 +170,25 @@ def move_player(game, key):
     dx, dy = DIRECTIONS[key]
     x, y = game["player"]
     target = (x + dx, y + dy)
-    if not inside(game, target) or target in room["walls"]:
+    if not inside(room, target) or target in room["walls"]:
         return False
+
+    if "mirror" in game["features"] and target in room["doors"]:
+        game["history"].append((
+            game["current_room"],
+            game["player"],
+            room["boxes"].copy()
+        ))
+
+        if game["current_room"] == "A":#現在の部屋がAなら
+            next_room = "B"#次をBに
+        else:
+            next_room = "A"#もしくはAに
+
+        game["current_room"] = next_room#実際に部屋を切り替える
+        game["player"] = target#プレイヤーを出入り口に
+        game["moves"] += 1
+        return True
     
     pushed_to = None
 
@@ -173,10 +196,21 @@ def move_player(game, key):
         if "mirror" in game["features"] and game["current_room"] == "A":
             return False
         pushed_to = (target[0] + dx, target[1] + dy)
-        if (not inside(game, pushed_to) or pushed_to in room["walls"]
+        if (not inside(room, pushed_to) or pushed_to in room["walls"]
                 or pushed_to in room["boxes"]):
             return False
-    game["history"].append((game["player"], room["boxes"].copy()))
+    if "mirror" in game["features"]:
+        game["history"].append((
+        game["current_room"],
+        game["player"],
+        room["boxes"].copy()
+    ))
+    else:
+        game["history"].append((
+        None,
+        game["player"],
+        room["boxes"].copy()
+    ))
     if pushed_to is not None:
         room["boxes"].remove(target)
         room["boxes"].add(pushed_to)
@@ -186,9 +220,19 @@ def move_player(game, key):
 
 
 def undo(game):
-    if game["history"]:
-        game["player"], game["boxes"] = game["history"].pop()
-        game["moves"] -= 1
+    if not game["history"]:
+        return
+
+    previous_room, previous_player, previous_boxes = game["history"].pop()#popでまえにかいてあるやつをとってくる
+
+    if "mirror" in game["features"]:
+        game["current_room"] = previous_room#前の部屋に戻す
+        game["rooms"][previous_room]["boxes"] = previous_boxes#箱の配置を戻す
+    else:
+        game["boxes"] = previous_boxes
+
+    game["player"] = previous_player#プレイヤーを前の位置に戻す
+    game["moves"] -= 1
 
 
 def is_cleared(game):
