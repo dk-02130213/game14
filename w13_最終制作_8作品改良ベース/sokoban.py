@@ -122,35 +122,60 @@ def load_level(level):#解析したマップを使って、ステージ全体を
 
     return game
 
+def make_row(room, y, player):
+    line = ""
+
+    for x in range(room["width"]):
+        pos = (x, y)
+
+        if pos == player:
+            line += "+" if pos in room["goals"] else "@"
+        elif pos in room["boxes"]:
+            line += "*" if pos in room["goals"] else "$"
+        elif pos in room["walls"]:
+            line += "#"
+        elif pos in room["doors"]:
+            line += "D"
+        elif pos in room["goals"]:
+            line += "."
+        else:
+            line += " "
+
+    return line
 
 def draw_game(game):
-    if "mirror" in game["features"]:
-        room = game["rooms"][game["current_room"]]
-    else:
-        room = game
-
     print("\n" * 2 + "=== SOKOBAN ===")
     print("クリア条件:", game["description"])
-    print("# 壁   . ゴール   $ 箱   @ プレイヤー   * ゴール上の箱")
-    for y in range(room["height"]):
-        line = ""
-        for x in range(room["width"]):
-            pos = (x, y)
-            if pos == game["player"]:
-                line += "+" if pos in room["goals"] else "@"
-            elif pos in room["boxes"]:
-                line += "*" if pos in room["goals"] else "$"
-            elif pos in room["walls"]:
-                line += "#"
-            elif pos in room["doors"]:
-                line += "D"
-            elif pos in room["goals"]:
-                line += "."
-            else:
-                line += " "
-        print(line)
+    print("# 壁   . ゴール   $ 箱   @ プレイヤー   D 出入口")
+
     if "mirror" in game["features"]:
-        print(f"現在の部屋: {game['current_room']}")
+        room_a = game["rooms"]["A"]
+        room_b = game["rooms"]["B"]
+
+        current = game["current_room"]
+
+        print()
+        print("部屋A：お手本          部屋B：操作する部屋")
+
+        if current == "A":
+            player_a = game["player"]
+            player_b = None
+        else:
+            player_a = None
+            player_b = game["player"]
+
+        for y in range(room_a["height"]):
+            line_a = make_row(room_a, y, player_a)
+            line_b = make_row(room_b, y, player_b)
+
+            print(line_a + "     " + line_b)
+
+        print(f"\n現在の部屋: {current}")
+
+    else:
+        for y in range(game["height"]):
+            print(make_row(game, y, game["player"]))
+
     print(f"移動回数: {game['moves']} | WASD: 移動 / U: 一手戻す / R: リスタート / Q: 終了")
 
 
