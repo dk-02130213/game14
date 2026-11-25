@@ -15,16 +15,27 @@ LEVELS = [
     },
     {
         "name": "ステージ2",
-        "map": [
+        "rooms": {
+        "A": [
         "##########",
+        "#       $#",
+        "#  $     #",
         "#        #",
-        "#  ..    #",
-        "#  $$    #",
         "#   @    #",
-        "#        #",
+        "#        D",
         "##########",
         ],
-        "features": []
+        "B": [
+        "##########",
+        "#        #",
+        "#        #",
+        "#  $$    #",
+        "#        #",
+        "#        D",
+        "##########",
+        ]
+        },
+        "features": ["mirror"]
     },
     {
         "name": "ステージ3",
@@ -45,13 +56,50 @@ LEVELS = [
 
 DIRECTIONS = {"w": (0, -1), "s": (0, 1), "a": (-1, 0), "d": (1, 0)}
 
-
-def load_level(rows):
-    walls, goals, boxes = set(), set(), set()
+def parse_map(rows):#一つのマップを解析
+    walls, goals, boxes, doors = set(), set(), set(), set()
     player = None
+
+    if not rows:
+        raise ValueError("マップが空です")
+
     width = len(rows[0])
+
+    if any(len(row) != width for row in rows):
+        raise ValueError("マップの行の長さをそろえてください")
+
+    for y, row in enumerate(rows):
+        for x, ch in enumerate(row):
+            pos = (x, y)
+            if ch == "#":
+                walls.add(pos)
+            elif ch == "D":
+                doors.add(pos)
+            elif ch in ".+*":
+                goals.add(pos)
+
+            if ch in "$*":
+                boxes.add(pos)
+            
+            if ch in "@+":
+                if player is not None:
+                    raise ValueError("プレイヤーは1人にしてください")
+                player = pos
+
+    return {"walls": walls, "goals": goals, "boxes": boxes, "doors": doors, "player": player,
+            "width": width, "height": len(rows), }
+
+def load_level(level):#解析したマップを使って、ステージ全体を準備している
+    if "mirror" in level["features"]: #ミラーが含まれているかどうか確認
+        room_a = parse_map(level["rooms"]["A"])
+        room_b = parse_map(level["rooms"]["B"])
+    else:
+        rows = level["map"]
+    walls, goals, boxes, doors = set(), set(), set(), set()
+    player = None
     if not rows or any(len(row) != width for row in rows):
         raise ValueError("マップの行の長さをそろえてください")
+    width = len(rows[0])
     for y, row in enumerate(rows):
         for x, ch in enumerate(row):
             pos = (x, y)
@@ -67,8 +115,8 @@ def load_level(rows):
                 player = pos
     if player is None or not boxes or len(boxes) != len(goals):
         raise ValueError("プレイヤー1人、箱とゴールは同じ数が必要です")
-    return {"walls": walls, "goals": goals, "boxes": boxes, "player": player,
-            "width": width, "height": len(rows), "moves": 0, "history": []}
+    return {"walls": walls, "goals": goals, "boxes": boxes, "doors": doors, "player": player,
+            "width": width, "height": len(rows), "moves": 0, "history": [], "features": level["features"] }
 
 
 def draw_game(game):
@@ -131,7 +179,7 @@ def is_cleared(game):
 
 def main():
     level_index = 0
-    game = load_level(LEVELS[level_index]["map"])
+    game = load_level(LEVELS[level_index])
     while True:
         draw_game(game)
         if is_cleared(game):
@@ -141,13 +189,13 @@ def main():
                 print("全ステージクリア！")
                 break
             input("Enterを押して次へ...")
-            game = load_level(LEVELS[level_index]["map"])
+            game = load_level(LEVELS[level_index])
             continue
         key = input("操作 > ").strip().lower()[:1]
         if key == "q":
             break
         if key == "r":
-            game = load_level(LEVELS[level_index]["map"])
+            game = load_level(LEVELS[level_index])
         elif key == "u":
             undo(game)
         else:
