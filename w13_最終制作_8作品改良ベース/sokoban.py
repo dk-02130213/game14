@@ -93,50 +93,58 @@ def load_level(level):#解析したマップを使って、ステージ全体を
     if "mirror" in level["features"]: #ミラーが含まれているかどうか確認
         room_a = parse_map(level["rooms"]["A"])
         room_b = parse_map(level["rooms"]["B"])
+
+        game = {
+            "rooms": {
+                "A": room_a,
+                "B": room_b
+            },
+            "current_room": "A",
+            "player": room_a["player"],
+            "features": level["features"],
+            "moves": 0,
+            "history": []
+        }
     else:
-        rows = level["map"]
-    walls, goals, boxes, doors = set(), set(), set(), set()
-    player = None
-    if not rows or any(len(row) != width for row in rows):
-        raise ValueError("マップの行の長さをそろえてください")
-    width = len(rows[0])
-    for y, row in enumerate(rows):
-        for x, ch in enumerate(row):
-            pos = (x, y)
-            if ch == "#":
-                walls.add(pos)
-            elif ch in ".+*":
-                goals.add(pos)
-            if ch in "$*":
-                boxes.add(pos)
-            if ch in "@+":
-                if player is not None:
-                    raise ValueError("プレイヤーは1人にしてください")
-                player = pos
-    if player is None or not boxes or len(boxes) != len(goals):
-        raise ValueError("プレイヤー1人、箱とゴールは同じ数が必要です")
-    return {"walls": walls, "goals": goals, "boxes": boxes, "doors": doors, "player": player,
-            "width": width, "height": len(rows), "moves": 0, "history": [], "features": level["features"] }
+        room = parse_map(level["map"])
+
+        game = {
+            **room,
+            "features": level["features"],
+            "moves": 0,
+            "history": []
+        }
+
+    return game
 
 
 def draw_game(game):
+    if "mirror" in game["features"]:
+        room = game["rooms"][game["current_room"]]
+    else:
+        room = game
+
     print("\n" * 2 + "=== SOKOBAN ===")
     print("# 壁   . ゴール   $ 箱   @ プレイヤー   * ゴール上の箱")
-    for y in range(game["height"]):
+    for y in range(room["height"]):
         line = ""
-        for x in range(game["width"]):
+        for x in range(room["width"]):
             pos = (x, y)
             if pos == game["player"]:
-                line += "+" if pos in game["goals"] else "@"
-            elif pos in game["boxes"]:
-                line += "*" if pos in game["goals"] else "$"
-            elif pos in game["walls"]:
+                line += "+" if pos in room["goals"] else "@"
+            elif pos in room["boxes"]:
+                line += "*" if pos in room["goals"] else "$"
+            elif pos in room["walls"]:
                 line += "#"
-            elif pos in game["goals"]:
+            elif pos in room["doors"]:
+                line += "D"
+            elif pos in room["goals"]:
                 line += "."
             else:
                 line += " "
         print(line)
+    if "mirror" in game["features"]:
+        print(f"現在の部屋: {game['current_room']}")
     print(f"移動回数: {game['moves']} | WASD: 移動 / U: 一手戻す / R: リスタート / Q: 終了")
 
 
@@ -147,21 +155,31 @@ def inside(game, pos):
 def move_player(game, key):
     if key not in DIRECTIONS:
         return False
+    
+    if "mirror" in game["features"]:
+        room = game["rooms"][game["current_room"]]
+    else:
+        room = game
+
     dx, dy = DIRECTIONS[key]
     x, y = game["player"]
     target = (x + dx, y + dy)
-    if not inside(game, target) or target in game["walls"]:
+    if not inside(game, target) or target in room["walls"]:
         return False
+    
     pushed_to = None
-    if target in game["boxes"]:
-        pushed_to = (target[0] + dx, target[1] + dy)
-        if (not inside(game, pushed_to) or pushed_to in game["walls"]
-                or pushed_to in game["boxes"]):
+
+    if target in room["boxes"]:
+        if "mirror" in game["features"] and game["current_room"] == "A":
             return False
-    game["history"].append((game["player"], game["boxes"].copy()))
+        pushed_to = (target[0] + dx, target[1] + dy)
+        if (not inside(game, pushed_to) or pushed_to in room["walls"]
+                or pushed_to in room["boxes"]):
+            return False
+    game["history"].append((game["player"], room["boxes"].copy()))
     if pushed_to is not None:
-        game["boxes"].remove(target)
-        game["boxes"].add(pushed_to)
+        room["boxes"].remove(target)
+        room["boxes"].add(pushed_to)
     game["player"] = target
     game["moves"] += 1
     return True
@@ -174,6 +192,12 @@ def undo(game):
 
 
 def is_cleared(game):
+    if "mirror" in game["features"]:
+        room_a = game["rooms"]["A"]
+        room_b = game["rooms"]["B"]
+
+        return room_a["boxes"] == room_b["boxes"]
+
     return game["boxes"] == game["goals"]
 
 
