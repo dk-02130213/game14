@@ -45,15 +45,15 @@ LEVELS = [
         "map": [
         "###########",
         "#         #",
-        "#         #",
-        "#    #    #",
-        "#    #    #",
-        "#  . # $  #",
-        "#      @  #",
+        "#  @  $   #",
+        "#IIIIIIIII#",
+        "#IIIIIIIII#",
+        "#IIIIIIIII#",
+        "#IIII.IIII#",
         "###########",
         ],
-        "features": [],
-        "description": "箱をすべてゴールに運ぼう！"
+        "features": ["ice"],
+        "description": "床が滑る！！"
     },  
 
 ]
@@ -62,8 +62,8 @@ LEVELS = [
 DIRECTIONS = {"w": (0, -1), "s": (0, 1), "a": (-1, 0), "d": (1, 0)}
 
 def parse_map(rows):  # マップ文字列を座標データに変換する
-    # 壁・ゴール・箱・扉の座標を集合で保存する
-    walls, goals, boxes, doors = set(), set(), set(), set()
+    # 壁・ゴール・箱・扉・氷の座標を集合で保存する
+    walls, goals, boxes, doors, ice = set(), set(), set(), set(), set()
     player = None  # プレイヤーの座標
 
     if not rows:  # 空のマップは解析できない
@@ -82,6 +82,8 @@ def parse_map(rows):  # マップ文字列を座標データに変換する
                 walls.add(pos)
             elif ch == "D":
                 doors.add(pos)
+            elif ch == "I":
+                ice.add(pos)
             elif ch in ".+*":
                 goals.add(pos)
 
@@ -94,7 +96,7 @@ def parse_map(rows):  # マップ文字列を座標データに変換する
                 player = pos
 
     # 解析結果とマップの大きさを辞書にして返す
-    return {"walls": walls, "goals": goals, "boxes": boxes, "doors": doors, "player": player,
+    return {"walls": walls, "goals": goals, "boxes": boxes, "doors": doors, "ice": ice, "player": player,
             "width": width, "height": len(rows), }
 
 def load_level(level):  # ステージのデータをゲーム用に準備する
@@ -143,6 +145,8 @@ def make_row(room, y, player):  # 部屋の指定した1行を文字列にする
             line += "#"
         elif pos in room["doors"]:
             line += "D"
+        elif pos in room["ice"]:
+            line += "I"
         elif pos in room["goals"]:
             line += "."
         else:
