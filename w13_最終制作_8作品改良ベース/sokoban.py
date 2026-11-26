@@ -80,7 +80,7 @@ LEVELS = [
         ]
     },
     "features": ["mirror", "ice"],
-    "description": "部屋Bの氷を利用して、部屋Aと箱の配置を一致させよう！"
+    "description": "くそムズイ！"
 },
 
 ]
@@ -171,9 +171,9 @@ def make_row(room, y, player):  # 部屋の指定した1行を文字列にする
         elif pos in room["walls"]:
             line += "#"
         elif pos in room["doors"]:
-            line += "D"
+            line += "\033[95mD\033[0m"
         elif pos in room["ice"]:
-            line += "I"
+            line += "\033[96mI\033[0m"
         elif pos in room["goals"]:
             line += "."
         else:
