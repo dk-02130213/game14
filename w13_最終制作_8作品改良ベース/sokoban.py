@@ -237,35 +237,62 @@ def move_player(game, key):  # キーに応じてプレイヤーを動かす
     pushed_to = None
 
     if target in room["boxes"]:
-        # ミラー形式では部屋Aの箱を動かせない
+        # Mirrorの部屋Aでは箱を押せない
         if "mirror" in game["features"] and game["current_room"] == "A":
             return False
+
         pushed_to = (target[0] + dx, target[1] + dy)
-        # 箱の先が壁・マップ外・別の箱なら押せない
-        if (not inside(room, pushed_to) or pushed_to in room["walls"]
+
+        # 箱を1マス押せるか確認
+        if (not inside(room, pushed_to)
+                or pushed_to in room["walls"]
                 or pushed_to in room["boxes"]):
             return False
 
-    # 移動前の状態を保存して、あとで一手戻せるようにする
+        # Iceでは箱も滑る
+        if "ice" in game["features"]:
+            while pushed_to in room["ice"]:#箱を押した先が氷なら
+                next_pos = (pushed_to[0] + dx, pushed_to[1] + dy)
+
+                if (not inside(room, next_pos)
+                        or next_pos in room["walls"]
+                        or next_pos in room["boxes"]):
+                    break
+
+                pushed_to = next_pos
+
+    # 移動前の状態を保存
     if "mirror" in game["features"]:
         game["history"].append((
-        game["current_room"],
-        game["player"],
-        room["boxes"].copy()
-    ))
+            game["current_room"],
+            game["player"],
+            room["boxes"].copy()
+        ))
     else:
         game["history"].append((
-        None,
-        game["player"],
-        room["boxes"].copy()
-    ))
+            None,
+            game["player"],
+            room["boxes"].copy()
+        ))
 
-    # 箱を押した場合は、箱を移動先へ移す
+    # 箱を移動させる
     if pushed_to is not None:
         room["boxes"].remove(target)
         room["boxes"].add(pushed_to)
 
-    # プレイヤーの位置と移動回数を更新する
+    # Iceではプレイヤーも滑る
+    if "ice" in game["features"]:
+        while target in room["ice"]:
+            next_pos = (target[0] + dx, target[1] + dy)
+
+            if (not inside(room, next_pos)
+                    or next_pos in room["walls"]
+                    or next_pos in room["boxes"]):
+                break
+
+            target = next_pos
+
+    # プレイヤーの位置を更新
     game["player"] = target
     game["moves"] += 1
     return True
