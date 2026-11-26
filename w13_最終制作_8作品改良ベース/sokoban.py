@@ -13,7 +13,7 @@ LEVELS = [
         "#########",
         ],
         "features": [],
-        "description": "箱をすべてゴールに運ぼう！"
+        "description": "箱をすべてゴールに運べ！"
     },
     {
         "name": "ステージ2",
@@ -23,8 +23,8 @@ LEVELS = [
         "#       $#",
         "#  $     #",
         "#        #",
-        "#   @    #",
-        "#        D",
+        "#        #",
+        "#      @ D",
         "##########",
         ],
         "B": [
@@ -38,7 +38,7 @@ LEVELS = [
         ]
         },
         "features": ["mirror"],
-        "description": "部屋Aをお手本にして、部屋Bの箱を同じ位置に配置しよう！"
+        "description": "部屋Aをお手本にして、部屋Bの箱を同じ位置に配置しろ！"
     },
     {
         "name": "ステージ3",
@@ -55,6 +55,33 @@ LEVELS = [
         "features": ["ice"],
         "description": "床が滑る！！"
     },  
+    {
+    "name": "ステージ4",
+    "rooms": {
+        "A": [
+            "###########",
+            "#        $#",
+            "# $       #",
+            "#         #",
+            "#         #",
+            "#       @ D",
+            "#    $    #",
+            "###########",
+        ],
+        "B": [
+            "###########",
+            "#IIIIIIIII#",
+            "#I  IIIIII#",
+            "#II$IIIIII#",
+            "##IIIIII$ #",
+            "#IIIII$   D",
+            "#III# I   #",
+            "###########",
+        ]
+    },
+    "features": ["mirror", "ice"],
+    "description": "部屋Bの氷を利用して、部屋Aと箱の配置を一致させよう！"
+},
 
 ]
 
@@ -157,7 +184,7 @@ def make_row(room, y, player):  # 部屋の指定した1行を文字列にする
 def draw_game(game):  # ゲーム画面を表示する
     print("\n" * 2 + "=== SOKOBAN ===")
     print("クリア条件:", game["description"])
-    print("# 壁   . ゴール   $ 箱   @ プレイヤー   D 出入口")
+    print("# 壁   . ゴール   $ 箱   @ プレイヤー   D 出入口　I 氷")
 
     if "mirror" in game["features"]:
         # ミラー形式ではお手本と操作中の部屋を並べて表示する
